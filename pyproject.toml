@@ -1,0 +1,61 @@
+[project]
+name = "kowinski"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Kian Sierra", email = "kiansierra90@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "accelerate>=1.4.0",
+    "bitsandbytes>=0.45.3",
+    "colorlog>=6.9.0",
+    "datasets>=3.3.2",
+    "deepspeed>=0.16.4",
+    "diffusers>=0.32.2",
+    "flash-attn>=2.7.4.post1",
+    "huggingface-hub>=0.29.1",
+    "hydra-core>=1.3.2",
+    "loguru>=0.7.3",
+    "modal>=0.73.72",
+    "peft>=0.14.0",
+    "python-dotenv>=1.0.1",
+    "torch>=2.5.1",
+    "torchao>=0.8.0",
+    "torchvision>=0.20.1",
+    "trl>=0.15.2",
+    "vllm>=0.2.5",
+    "vtracer>=0.6.11",
+    "wandb>=0.18.7",
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
+
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cu124", marker = "platform_system != 'Darwin'"},
+]
+torchvision = [
+  { index = "pytorch-cu124", marker = "platform_system != 'Darwin'"},
+]
+speechbox = { git = "https://github.com/huggingface/speechbox" }
+
+[tool.uv]
+no-build-isolation-package = ["flash-attn"]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.29.5",
+    "ipywidgets>=8.1.5",
+]
+
+[project.scripts]
+kowinski = "kowinski:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
