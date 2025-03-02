@@ -3,7 +3,8 @@ import yaml
 from typing import Dict, List, Any, Optional, Union
 from smolagents import CodeAgent, OpenAIServerModel, LiteLLMModel, HfApiModel
 from smolagents.models import Model
-
+from kowinski.tools.code_analysis import repository_querier
+from kowinski.tools.patch_tools import patch_tools
 def load_template(template_path: Optional[str] = None) -> Dict:
     """
     Load a YAML template for agent prompts.
@@ -87,7 +88,6 @@ def create_analysis_agent(
     
     # If tools not provided, use repository_querier
     if tools is None:
-        from kowinski.tools.code_analysis import repository_querier
         tools = repository_querier().values()
     
     # Create model if not provided
@@ -143,3 +143,47 @@ def create_code_agent(
         prompt_templates=template,
         managed_agents=managed_agents,
     ) 
+
+
+
+def create_patch_agent(
+    model: Optional[Model] = None,
+    template_path: Optional[str] = None,
+    db_path: str = "repository.db"
+) -> CodeAgent:
+    """
+    Create a patch agent that can generate patches for GitHub issues.
+    
+    Args:
+        model: A pre-configured model instance. If None, raises ValueError.
+        template_path: Path to the YAML template file. If None, uses the default patch template.
+        db_path: Path to the SQLite database containing repository information.
+        
+    Returns:
+        A configured CodeAgent instance specialized for patch generation.
+    """
+    # Load template
+    if template_path is None:
+        # Use the default patch template
+        template_path = os.path.join(os.path.dirname(__file__), "../templates/patch-template.yaml")
+    
+    template = load_template(template_path)
+    
+    # Ensure we have a model
+    if model is None:
+        raise ValueError("Model must be provided")
+    
+    # Combine code analysis tools and patch tools
+    tools = repository_querier().values()
+    all_tools = {}
+    all_tools.update(repository_querier(db_path))
+    all_tools.update(patch_tools())
+    
+    # Create and return the agent
+    return CodeAgent(
+        tools=all_tools.values(),
+        model=model,
+        prompt_templates=template,
+        name="patch_agent",
+        description="This agent is responsible for generating patches to fix issues in code."
+    )
