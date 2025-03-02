@@ -14,7 +14,7 @@ class FileInfo:
     file_extension: str
     line_count: int
     full_path: str  # Combines relative_folder and file_name
-
+    content: Optional[str] = None
 @dataclass
 class FunctionInfo:
     """Information about a Python function or method."""
@@ -185,7 +185,7 @@ def repository_querier(db_path: str = "repository.db"):
             folder, filename = "", file_path
         
         query = """
-        SELECT id, relative_folder, file_name, file_extension, line_count
+        SELECT id, relative_folder, file_name, file_extension, line_count, content
         FROM repofile
         WHERE relative_folder = :folder AND file_name = :filename
         """
@@ -206,41 +206,26 @@ def repository_querier(db_path: str = "repository.db"):
             file_name=row['file_name'],
             file_extension=row['file_extension'],
             line_count=row['line_count'],
-            full_path=full_path
+            full_path=full_path,
+            content=row['content']
         )
     
     @tool
-    def get_file_content( file_id: int = None, file_path: str = None) -> Optional[str]:
+    def get_file_content(file_path: str) -> Optional[str]:
         """
-        Get the content of a file by ID or path.
+        Get the content of a file by path.
         
         Args:
-            file_id: The ID of the file in the database.
             file_path: The relative path to the file, including folder and filename.
-            
-        Note:
-            Either file_id or file_path must be provided.
             
         Returns:
             The content of the file as a string, or None if the file is not found.
         """
-        if file_id is None and file_path is None:
-            raise ValueError("Either file_id or file_path must be provided")
-        
-        if file_path is not None and file_id is None:
-            file_info = get_file_by_path(file_path)
-            if file_info is None:
-                return None
-            file_id = file_info.id
-        
-        query = "SELECT content FROM repofile WHERE id = :file_id"
-        with engine.connect() as conn:
-            result = pd.read_sql(text(query), conn, params={"file_id": file_id})
-        
-        if len(result) == 0:
+        file_info = get_file_by_path(file_path)
+        if file_info is None:
             return None
         
-        return result.iloc[0]['content']
+        return file_info.content
     
     @tool
     def get_entity_at_line( file_path: str, line_number: int) -> Optional[CodeEntity]:
